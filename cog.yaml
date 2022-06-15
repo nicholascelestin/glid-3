@@ -1,5 +1,6 @@
 build:
   gpu: true
+  cuda: "11.4.3"
   system_packages:
     - "libgl1-mesa-glx"
     - "libglib2.0-0"
@@ -20,7 +21,6 @@ build:
     - "pip install pyyaml>=5.1 transformers typing_extensions"
     - "wget https://ommer-lab.com/files/latent-diffusion/vq-f8.zip && unzip vq-f8.zip -d vq-f8"
     - "wget https://dall-3.com/models/glid-3/ema-latest.pt"
-
 predict: "predict.py:Predictor"
 image: "r8.im/nicholascelestin/glid-3"
 
