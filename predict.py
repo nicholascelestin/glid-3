@@ -97,7 +97,8 @@ class Predictor(BasePredictor):
             eps = torch.cat([half_eps, half_eps], dim=0)
             return torch.cat([eps, rest], dim=1)
 
-        def save_sample(i, sample, clip_score=False) -> str:
+        def save_sample(i, sample, clip_score=False) -> []:
+            files = []
             for k, image in enumerate(sample['pred_xstart'][:batch_size]):
                 image = 2*image
                 im = image.unsqueeze(0)
@@ -114,7 +115,8 @@ class Predictor(BasePredictor):
                     similarity = torch.nn.functional.cosine_similarity(image_emb_norm, text_emb_norm, dim=-1)
                     final_filename = f'output_{similarity.item():0.3f}_{i * batch_size + k:05}.png'
                     os.rename(filename, final_filename)
-                return filename
+                files.append(Path(filename))
+            return files
 
         predict_start_time = time.time()
         print("Doing prediction")
@@ -140,6 +142,7 @@ class Predictor(BasePredictor):
 
         print(f'Generating images at {time.time() - predict_start_time}')
         for i in range(num_batches):
+            print(f'Generating batch {i} at {time.time() - predict_start_time}')
             samples = sample_fn(
                 model_fn,
                 (batch_size*2, 4, int(height/8), int(width/8)),
@@ -150,11 +153,9 @@ class Predictor(BasePredictor):
                 progress=True,
             )
             for j, sample in enumerate(samples):
+                print(f'Handling sample {j} at {time.time() - predict_start_time}')
                 if j > 0 and j % 50 == 0:
-                    all_images.append(Path(save_sample(i, sample)))
-                    yield Path(save_sample(i, sample))
-            all_images.append(Path(save_sample(i, sample)))
+                    return save_sample(i, sample)
         print(f'Prediction done at {time.time() - predict_start_time}')
-        return all_images
 
 
