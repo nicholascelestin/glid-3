@@ -1,0 +1,28 @@
+build:
+  gpu: true
+  system_packages:
+    - "libgl1-mesa-glx"
+    - "libglib2.0-0"
+    - "zip"
+    - "unzip"
+  python_version: "3.8"
+  python_packages:
+    - "Flask==2.1.0"
+    - "Flask-Cors==3.0.9"
+    - "Flask-RESTful==0.3.8"
+    - "flax==0.5.0"
+  run:
+    - "pip install torch torchvision torchaudio --extra-index-url https://download.pytorch.org/whl/cu113"
+    - "git clone https://github.com/openai/CLIP.git && cd CLIP && pip install -e . && cd .."
+    - "git clone https://github.com/CompVis/latent-diffusion.git && cd latent-diffusion && pip install -e . && cd .."
+    - "git clone https://github.com/huggingface/transformers.git && cd transformers && pip install -e . && cd .."
+    - "pip install dalle-pytorch"
+    - "pip install pyyaml>=5.1 transformers typing_extensions"
+    - "wget https://ommer-lab.com/files/latent-diffusion/vq-f8.zip && unzip vq-f8.zip -d vq-f8"
+    - "wget https://dall-3.com/models/glid-3/ema-latest.pt"
+
+predict: "predict.py:Predictor"
+image: "r8.im/nicholascelestin/dalle-mega"
+
+
+
