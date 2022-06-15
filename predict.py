@@ -105,7 +105,7 @@ class Predictor(BasePredictor):
                 im_quant, _, _ = self.ldm_model.quantize(im)
                 out = self.ldm_model.decode(im_quant)
                 out = TF.to_pil_image(out.squeeze(0).add(1).div(2).clamp(0, 1))
-                filename = f'output/_progress_{i * batch_size + k:05}.png'
+                filename = f'output_{i * batch_size + k:05}.png'
                 out.save(filename)
                 print(f'Saved image {filename} at {time.time() - predict_start_time}')
 
@@ -113,7 +113,7 @@ class Predictor(BasePredictor):
                     image_emb = self.clip_model.encode_image(self.clip_preprocessor(out).unsqueeze(0).to(self.device))
                     image_emb_norm = image_emb / image_emb.norm(dim=-1, keepdim=True)
                     similarity = torch.nn.functional.cosine_similarity(image_emb_norm, text_emb_norm, dim=-1)
-                    final_filename = f'output/_{similarity.item():0.3f}_{i * batch_size + k:05}.png'
+                    final_filename = f'output_{similarity.item():0.3f}_{i * batch_size + k:05}.png'
                     os.rename(filename, final_filename)
                 return filename
 
