@@ -55,7 +55,7 @@ class Predictor(BasePredictor):
         # Load Glid Model
         print(f'Loading glid model at {time.time() - setup_start_time}')
         self.glid_model, self.diffusion = create_model_and_diffusion(**model_config)
-        self.glid_model.load_state_dict(torch.load("ema-latest.pt", map_location='cpu'))
+        self.glid_model.load_state_dict(torch.load("/ema-latest.pt", map_location='cpu'))
         self.glid_model.requires_grad_(False).eval().to(self.device)
 
         print(f'Converting glid model at {time.time() - setup_start_time}')
@@ -66,7 +66,7 @@ class Predictor(BasePredictor):
 
         # Load Latent Diffusion Model
         print(f'Loading diffusion model at {time.time() - setup_start_time}')
-        config = OmegaConf.load("./vq-f8/config.yaml")
+        config = OmegaConf.load("/vq-f8/config.yaml")
         pl_sd = torch.load("./vq-f8/model.ckpt", map_location="cpu")
         sd = pl_sd["state_dict"]
         self.ldm_model = instantiate_from_config(config.model)
@@ -84,8 +84,8 @@ class Predictor(BasePredictor):
 
     def predict(self,
                 prompt: str = Input(description="Image prompt"),
-                negative: str = Input(description="Negative image prompt"),
-                batch_size: int = Input(description="Number of images to generate", default=1, ge=1,le=20)
+                negative: str = Input(description="Negative image prompt", default=None),
+                batch_size: int = Input(description="Number of images to generate", default=1, ge=1, le=20)
                 # model_size: str = Input(description="Size of the model", default="MINI", choices=["MINI"])
                 ) -> typing.List[Path]:
 
@@ -108,6 +108,7 @@ class Predictor(BasePredictor):
                 out = TF.to_pil_image(out.squeeze(0).add(1).div(2).clamp(0, 1))
                 filename = f'output/_progress_{i * batch_size + k:05}.png'
                 out.save(filename)
+                print(f'Saved image {filename} at {time.time() - predict_start_time}')
 
                 if clip_score:
                     image_emb = self.clip_model.encode_image(self.clip_preprocessor(out).unsqueeze(0).to(self.device))
@@ -139,6 +140,7 @@ class Predictor(BasePredictor):
 
         sample_fn = self.diffusion.plms_sample_loop_progressive
 
+        print(f'Generating images at {time.time() - predict_start_time}')
         for i in range(num_batches):
             samples = sample_fn(
                 model_fn,
@@ -154,6 +156,7 @@ class Predictor(BasePredictor):
                     all_images.append(Path(save_sample(i, sample)))
                     yield Path(save_sample(i, sample))
             all_images.append(Path(save_sample(i, sample)))
+        print(f'Prediction done at {time.time() - predict_start_time}')
         return all_images
 
 
