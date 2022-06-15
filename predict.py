@@ -67,7 +67,7 @@ class Predictor(BasePredictor):
         # Load Latent Diffusion Model
         print(f'Loading diffusion model at {time.time() - setup_start_time}')
         config = OmegaConf.load("/vq-f8/config.yaml")
-        pl_sd = torch.load("./vq-f8/model.ckpt", map_location="cpu")
+        pl_sd = torch.load("/vq-f8/model.ckpt", map_location="cpu")
         sd = pl_sd["state_dict"]
         self.ldm_model = instantiate_from_config(config.model)
         self.ldm_model.load_state_dict(sd, strict=False)
