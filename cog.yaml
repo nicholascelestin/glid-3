@@ -22,7 +22,7 @@ build:
     - "wget https://dall-3.com/models/glid-3/ema-latest.pt"
 
 predict: "predict.py:Predictor"
-image: "r8.im/nicholascelestin/dalle-mega"
+image: "r8.im/nicholascelestin/glid-3"
 
 
 
