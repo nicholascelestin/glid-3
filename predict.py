@@ -129,11 +129,11 @@ class Predictor(BasePredictor):
         num_batches = 1
 
         print(f'Tokenizing prompt at {time.time() - predict_start_time}')
-        text = clip.tokenize([prompt]*batch_size, truncate=True).to(self.device)
+        text = self.clip_model.tokenize([prompt]*batch_size, truncate=True).to(self.device)
         text_emb, text_out = self.clip_model.encode_text(text, out=True)
         text_emb_norm = text_emb[0] / text_emb[0].norm(dim=-1, keepdim=True)
         text_out = text_out.permute(0, 2, 1)
-        text_blank = clip.tokenize([negative]*batch_size).to(self.device)
+        text_blank = self.clip_model.tokenize([negative]*batch_size).to(self.device)
         text_emb_blank, text_out_blank = self.clip_model.encode_text(text_blank, out=True)
         text_out_blank = text_out_blank.permute(0, 2, 1)
         kwargs = { "xf_proj": torch.cat([text_emb, text_emb_blank], dim=0), "xf_out": torch.cat([text_out, text_out_blank], dim=0) }
