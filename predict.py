@@ -83,7 +83,7 @@ class Predictor(BasePredictor):
 
     def predict(self,
                 prompt: str = Input(description="Image prompt"),
-                negative: str = Input(description="Negative image prompt", default=None),
+                negative: str = Input(description="Negative image prompt", default=""),
                 batch_size: int = Input(description="Number of images to generate", default=1, ge=1, le=20)
                 # model_size: str = Input(description="Size of the model", default="MINI", choices=["MINI"])
                 ) -> typing.List[Path]:
