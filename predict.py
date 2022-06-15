@@ -9,7 +9,6 @@ from omegaconf import OmegaConf
 from ldm.util import instantiate_from_config
 from cog import BasePredictor, Path, Input, File
 
-
 class Predictor(BasePredictor):
 
     diffusion = None
@@ -129,21 +128,13 @@ class Predictor(BasePredictor):
 
         print(f'Tokenizing prompt at {time.time() - predict_start_time}')
         text = clip.tokenize([prompt]*batch_size, truncate=True).to(self.device)
-        print(f'Test 1 {time.time() - predict_start_time}')
         text_emb, text_out = self.clip_model.encode_text(text, out=True)
-        print(f'Test 2 {time.time() - predict_start_time}')
         text_emb_norm = text_emb[0] / text_emb[0].norm(dim=-1, keepdim=True)
-        print(f'Test 3 {time.time() - predict_start_time}')
         text_out = text_out.permute(0, 2, 1)
-        print(f'Test 4 {time.time() - predict_start_time}')
         text_blank = clip.tokenize([negative]*batch_size).to(self.device)
-        print(f'Test 5 {time.time() - predict_start_time}')
         text_emb_blank, text_out_blank = self.clip_model.encode_text(text_blank, out=True)
-        print(f'Test 6 {time.time() - predict_start_time}')
         text_out_blank = text_out_blank.permute(0, 2, 1)
-        print(f'Test 7 {time.time() - predict_start_time}')
         kwargs = { "xf_proj": torch.cat([text_emb, text_emb_blank], dim=0), "xf_out": torch.cat([text_out, text_out_blank], dim=0) }
-        print(f'Test 8 {time.time() - predict_start_time}')
 
         sample_fn = self.diffusion.plms_sample_loop_progressive
 
