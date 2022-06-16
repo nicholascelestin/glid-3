@@ -2,6 +2,7 @@ import os
 import time
 import torch
 import typing
+import glob
 from torchvision.transforms import functional as TF
 from guided_diffusion.script_util import create_model_and_diffusion, model_and_diffusion_defaults
 from clip_custom import clip
@@ -78,6 +79,11 @@ class Predictor(BasePredictor):
         self.clip_model, self.clip_preprocessor = clip.load('ViT-L/14', device=self.device, jit=False)
         self.clip_model.eval().requires_grad_(False)
         set_requires_grad(self.clip_model, False)
+
+        print(f'Creating output directory at {time.time() - setup_start_time}')
+        if not os.path.exists('./output'):
+            os.makedirs('./output')
+
         print(f'Setup complete at {time.time() - setup_start_time}')
 
     def predict(self,
@@ -97,7 +103,7 @@ class Predictor(BasePredictor):
             eps = torch.cat([half_eps, half_eps], dim=0)
             return torch.cat([eps, rest], dim=1)
 
-        def save_sample(i, sample, clip_score=False) -> []:
+        def save_sample(i, sample, clip_score=False):
             files = []
             for k, image in enumerate(sample['pred_xstart'][:batch_size]):
                 print(f'Processing image {k} at {time.time() - predict_start_time}')
@@ -106,18 +112,16 @@ class Predictor(BasePredictor):
                 im_quant, _, _ = self.ldm_model.quantize(im)
                 out = self.ldm_model.decode(im_quant)
                 out = TF.to_pil_image(out.squeeze(0).add(1).div(2).clamp(0, 1))
-                filename = f'output_{i * batch_size + k:05}.png'
+                filename = f'output/{i * batch_size + k:05}.png'
                 out.save(filename)
                 print(f'Saved image {filename} at {time.time() - predict_start_time}')
-
                 if clip_score:
                     image_emb = self.clip_model.encode_image(self.clip_preprocessor(out).unsqueeze(0).to(self.device))
                     image_emb_norm = image_emb / image_emb.norm(dim=-1, keepdim=True)
                     similarity = torch.nn.functional.cosine_similarity(image_emb_norm, text_emb_norm, dim=-1)
-                    final_filename = f'output_{similarity.item():0.3f}_{i * batch_size + k:05}.png'
+                    final_filename = f'output/{similarity.item():0.3f}_{i * batch_size + k:05}.png'
                     os.rename(filename, final_filename)
                 files.append(Path(filename))
-            return files
 
         predict_start_time = time.time()
         print("Doing prediction")
@@ -128,6 +132,11 @@ class Predictor(BasePredictor):
         width = 256
         height = 256
         num_batches = 1
+
+        print(f'Removing prior output at {time.time() - predict_start_time}')
+        for img_path in glob.glob('output/*.png'):
+            print(f'Removing {img_path}')
+            os.remove(img_path)
 
         print(f'Tokenizing prompt at {time.time() - predict_start_time}')
         text = clip.tokenize([prompt]*batch_size, truncate=True).to(self.device)
@@ -164,8 +173,12 @@ class Predictor(BasePredictor):
             for j, sample in enumerate(samples):
                 print(f'Handling sample {j} at {time.time() - predict_start_time}')
                 if j > 0 and j % 50 == 0:
-                    return save_sample(i, sample)
-                return save_sample(i, sample)
+                    print(f'Sample {j} additional')
+                    save_sample(i, sample)
+                save_sample(i, sample)
+        for img_path in glob.glob('output/*.png'):
+            all_images.append(img_path)
         print(f'Prediction done at {time.time() - predict_start_time}')
+        return all_images
 
 
