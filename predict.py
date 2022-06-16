@@ -78,7 +78,7 @@ class Predictor(BasePredictor):
         self.clip_model, self.clip_preprocessor = clip.load('ViT-L/14', device=self.device, jit=False)
         self.clip_model.eval().requires_grad_(False)
         set_requires_grad(self.clip_model, False)
-        print(f'Setup complete')
+        print(f'Setup complete at {time.time() - setup_start_time}')
 
     def predict(self,
                 prompt: str = Input(description="Image prompt"),
