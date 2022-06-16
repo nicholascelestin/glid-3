@@ -105,7 +105,6 @@ class Predictor(BasePredictor):
 
         def save_sample(i, sample, clip_score=False):
             for k, image in enumerate(sample['pred_xstart'][:batch_size]):
-                print(f'Processing image {k} at {time.time() - predict_start_time}')
                 image = 2*image
                 im = image.unsqueeze(0)
                 im_quant, _, _ = self.ldm_model.quantize(im)
@@ -113,7 +112,6 @@ class Predictor(BasePredictor):
                 out = TF.to_pil_image(out.squeeze(0).add(1).div(2).clamp(0, 1))
                 filename = f'output/{i * batch_size + k:05}.png'
                 out.save(filename)
-                print(f'Saved image {filename} at {time.time() - predict_start_time}')
                 if clip_score:
                     image_emb = self.clip_model.encode_image(self.clip_preprocessor(out).unsqueeze(0).to(self.device))
                     image_emb_norm = image_emb / image_emb.norm(dim=-1, keepdim=True)
@@ -138,21 +136,13 @@ class Predictor(BasePredictor):
 
         print(f'Tokenizing prompt at {time.time() - predict_start_time}')
         text = clip.tokenize([prompt]*batch_size, truncate=True).to(self.device)
-        print(f'Test 1 at {time.time() - predict_start_time}')
         text_emb, text_out = self.clip_model.encode_text(text, out=True)
-        print(f'Test 2 at {time.time() - predict_start_time}')
         text_emb_norm = text_emb[0] / text_emb[0].norm(dim=-1, keepdim=True)
-        print(f'Test 3 at {time.time() - predict_start_time}')
         text_out = text_out.permute(0, 2, 1)
-        print(f'Test 4 at {time.time() - predict_start_time}')
         text_blank = clip.tokenize([negative]*batch_size).to(self.device)
-        print(f'Test 5 at {time.time() - predict_start_time}')
         text_emb_blank, text_out_blank = self.clip_model.encode_text(text_blank, out=True)
-        print(f'Test 6 at {time.time() - predict_start_time}')
         text_out_blank = text_out_blank.permute(0, 2, 1)
-        print(f'Test 7 at {time.time() - predict_start_time}')
         kwargs = { "xf_proj": torch.cat([text_emb, text_emb_blank], dim=0), "xf_out": torch.cat([text_out, text_out_blank], dim=0) }
-        print(f'Test 8 at {time.time() - predict_start_time}')
 
         sample_fn = self.diffusion.plms_sample_loop_progressive
 
@@ -169,9 +159,7 @@ class Predictor(BasePredictor):
                 progress=True,
             )
             for j, sample in enumerate(samples):
-                print(f'Handling sample {j} at {time.time() - predict_start_time}')
                 if j > 0 and j % 50 == 0:
-                    print(f'Sample {j} additional')
                     save_sample(i, sample)
                 save_sample(i, sample)
         for img_path in glob.glob('output/*.png'):
