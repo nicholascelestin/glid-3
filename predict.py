@@ -100,6 +100,7 @@ class Predictor(BasePredictor):
         def save_sample(i, sample, clip_score=False) -> []:
             files = []
             for k, image in enumerate(sample['pred_xstart'][:batch_size]):
+                print(f'Processing image {k} at {time.time() - predict_start_time}')
                 image = 2*image
                 im = image.unsqueeze(0)
                 im_quant, _, _ = self.ldm_model.quantize(im)
@@ -164,6 +165,7 @@ class Predictor(BasePredictor):
                 print(f'Handling sample {j} at {time.time() - predict_start_time}')
                 if j > 0 and j % 50 == 0:
                     return save_sample(i, sample)
+                return save_sample(i, sample)
         print(f'Prediction done at {time.time() - predict_start_time}')
 
 
